@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p class="{{ category }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <!-- Render the order form -->
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.name.label }}
+            {{ form.name() }}
+            {% if form.name.errors %}
+                {% for error in form.name.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.topping.label }}
+            {{ form.topping() }}
+            {% if form.topping.errors %}
+                {% for error in form.topping.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.sauce.label }}
+            {{ form.sauce() }}
+            {% if form.sauce.errors %}
+                {% for error in form.sauce.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.extras.label }}
+            {{ form.extras() }}
+        </div>
+        <div class="form-group">
+            {{ form.instructions.label }}
+            {{ form.instructions() }}
+        </div>
+        {{ form.submit() }}
+    </form>
+    </body>
+{% endblock %}
