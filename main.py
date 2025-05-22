@@ -5,14 +5,14 @@ from wtforms import StringField, RadioField, SelectField, SelectMultipleField, T
 from wtforms.validators import DataRequired, Length
 from datetime import datetime
 
-# 初始化 Flask 应用
+# init Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'  # WTForms 需要
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pizza.db'  # SQLite 数据库
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# 定义数据库模型
+# define database model
 pizza_topping = db.Table('pizza_topping',
                          db.Column('pid', db.Integer, db.ForeignKey('pizza.id'), primary_key=True),
                          db.Column('tid', db.Integer, db.ForeignKey('topping.id'), primary_key=True)
@@ -48,7 +48,7 @@ class Order(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-# 定义 WTForms 表单
+# define WTForms
 class OrderForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=3, max=20)])
     topping = RadioField('Pizza Topping',
@@ -62,7 +62,7 @@ class OrderForm(FlaskForm):
     submit = SubmitField('Send my Order')
 
 
-# 路由
+# routes
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -134,6 +134,8 @@ def edit_order(id):
     form = OrderForm(obj=order)
     if form.validate_on_submit():
         form.populate_obj(order)
+        # sqlalchemy.exc.ProgrammingError: (sqlite3.ProgrammingError) Error binding parameter 2: type 'list' is not supported
+        order.extras = ', '.join(form.extras.data)  # Convert list to string to solve the problems above
         order.update_time = datetime.utcnow()
         db.session.commit()
         return redirect(url_for('orderList'))
@@ -153,7 +155,7 @@ def not_found(e):
     return render_template('404.html'), 404
 
 
-# 初始化数据库
+# init database
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
