@@ -1,53 +1,49 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <body>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p class="{{ category }}">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    <!-- Render the order form -->
-    <form method="POST">
+<body>
+    <h1>Pizza Shop 2.0</h1>
+    <form method="POST" action="{{ url_for('order') }}">
         {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.name.label }}
-            {{ form.name() }}
-            {% if form.name.errors %}
+        <table>
+            <tr>
+                <td>{{ form.name.label }}</td>
+                <td>{{ form.name() }}</td>
                 {% for error in form.name.errors %}
-                    <span class="error">{{ error }}</span>
+                    <td><span style="color: red;">{{ error }}</span></td>
                 {% endfor %}
-            {% endif %}
-        </div>
-        <div class="form-group">
-            {{ form.topping.label }}
-            {{ form.topping() }}
-            {% if form.topping.errors %}
+            </tr>
+            <tr>
+                <td>{{ form.topping.label }}</td>
+                <td>{{ form.topping() }}</td>
                 {% for error in form.topping.errors %}
-                    <span class="error">{{ error }}</span>
+                    <td><span style="color: red;">{{ error }}</span></td>
                 {% endfor %}
-            {% endif %}
-        </div>
-        <div class="form-group">
-            {{ form.sauce.label }}
-            {{ form.sauce() }}
-            {% if form.sauce.errors %}
+            </tr>
+            <tr>
+                <td>{{ form.sauce.label }}</td>
+                <td>{{ form.sauce() }}</td>
                 {% for error in form.sauce.errors %}
-                    <span class="error">{{ error }}</span>
+                    <td><span style="color: red;">{{ error }}</span></td>
                 {% endfor %}
-            {% endif %}
-        </div>
-        <div class="form-group">
-            {{ form.extras.label }}
-            {{ form.extras() }}
-        </div>
-        <div class="form-group">
-            {{ form.instructions.label }}
-            {{ form.instructions() }}
-        </div>
-        {{ form.submit() }}
+            </tr>
+            <tr>
+                <td>{{ form.extras.label }}</td>
+                <td>{{ form.extras() }}</td>
+                {% for error in form.extras.errors %}
+                    <td><span style="color: red;">{{ error }}</span></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>{{ form.instructions.label }}</td>
+                <td>{{ form.instructions() }}</td>
+                {% for error in form.instructions.errors %}
+                    <td><span style="color: red;">{{ error }}</span></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td colspan="2">{{ form.submit() }}</td>
+            </tr>
+        </table>
     </form>
-    </body>
+</body>
 {% endblock %}

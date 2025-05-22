@@ -1,30 +1,31 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <head>
-        <meta charset="UTF-8">
-        <title>Order List</title>
-    </head>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <title>Order List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
     <h1>Submitted Pizza Orders</h1>
     <form action="{{ url_for('orderList') }}" method="get">
-        <input type="text" name="search" value="{{ search_query }}" placeholder="Search by name"><input type="submit"
-                                                                                                        value="Search">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="Search by name">
+        <input type="submit" value="Search">
     </form>
     <table>
         <thead>
-        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Topping</th>
-            <th>Sauce</th>
-            <th>Extras</th>
-            <th>Instructions</th>
-            <th>Last Updated</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Topping</th>
+                <th>Sauce</th>
+                <th>Extras</th>
+                <th>Instructions</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+            </tr>
         </thead>
         <tbody>
-        {% for order in orders %}
+            {% for order in orders %}
             <tr>
                 <td>{{ order.id }}</td>
                 <td>{{ order.name }}</td>
@@ -40,9 +41,8 @@
                     </form>
                 </td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
-    </body>
-
+</body>
 {% endblock %}

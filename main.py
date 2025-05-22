@@ -1,140 +1,160 @@
-# Import required Flask and related modules
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
-from wtforms import StringField, TextAreaField, SubmitField
+from wtforms import StringField, RadioField, SelectField, SelectMultipleField, TextAreaField, SubmitField
 from wtforms.validators import DataRequired, Length
 from datetime import datetime
-import logging
 
-# Configure logging for error tracking
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Initialize Flask application
+# 初始化 Flask 应用
 app = Flask(__name__)
-
-# Set configuration variables
-app.config['SECRET_KEY'] = 'your_secure_secret_key'  # Secure key for session and form security
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pizza.db'  # SQLite database path
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
-app.config['DEBUG'] = True  # Enable debug mode for development
-
-# Initialize SQLAlchemy for database operations
+app.config['SECRET_KEY'] = 'your_secret_key'  # WTForms 需要
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pizza.db'  # SQLite 数据库
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Initialize Flask-Login for user authentication
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'  # Redirect to login page if not authenticated
+# 定义数据库模型
+pizza_topping = db.Table('pizza_topping',
+                         db.Column('pid', db.Integer, db.ForeignKey('pizza.id'), primary_key=True),
+                         db.Column('tid', db.Integer, db.ForeignKey('topping.id'), primary_key=True)
+                         )
 
-# Define User model for authentication
-class User(UserMixin, db.Model):
+
+class Pizza(db.Model):
+    __tablename__ = 'pizza'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)  # Store hashed passwords in production
+    name = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    base = db.Column(db.String(50))
+    toppings = db.Column(db.String(100))
+    picture = db.Column(db.String(255))
+    toppings_rel = db.relationship('Topping', secondary=pizza_topping, backref=db.backref('pizzas', lazy='dynamic'))
 
-# Define Order model for the Orders table
+
+class Topping(db.Model):
+    __tablename__ = 'topping'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+
+
 class Order(db.Model):
+    __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)  # Customer name
-    topping = db.Column(db.String(100), nullable=False)  # Pizza topping
-    sauce = db.Column(db.String(100), nullable=False)  # Pizza sauce
-    extras = db.Column(db.String(200))  # Optional extras
-    instructions = db.Column(db.Text)  # Special instructions
-    update_time = db.Column(db.DateTime, default=datetime.utcnow)  # Order timestamp
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    topping = db.Column(db.String(50), nullable=False)
+    sauce = db.Column(db.String(50), nullable=False)
+    extras = db.Column(db.String(100))
+    instructions = db.Column(db.Text)
+    update_time = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Define OrderForm for handling order submissions
+
+# 定义 WTForms 表单
 class OrderForm(FlaskForm):
-    name = StringField('Customer Name', validators=[DataRequired(), Length(min=1, max=100)])
-    topping = StringField('Topping', validators=[DataRequired(), Length(min=1, max=100)])
-    sauce = StringField('Sauce', validators=[DataRequired(), Length(min=1, max=100)])
-    extras = StringField('Extras', validators=[Length(max=200)])
-    instructions = TextAreaField('Special Instructions', validators=[Length(max=500)])
-    submit = SubmitField('Place Order')
+    name = StringField('Name', validators=[DataRequired(), Length(min=3, max=20)])
+    topping = RadioField('Pizza Topping',
+                         choices=[('Supreme', 'Supreme'), ('Vegetarian', 'Vegetarian'), ('Hawaiian', 'Hawaiian')],
+                         validators=[DataRequired()])
+    sauce = SelectField('Pizza Sauce', choices=[('Tomato', 'Tomato'), ('BBQ', 'BBQ'), ('Garlic', 'Garlic')],
+                        validators=[DataRequired()])
+    extras = SelectMultipleField('Optional Extras',
+                                 choices=[('Extra Cheese', 'Extra Cheese'), ('Gluten Free Base', 'Gluten Free Base')])
+    instructions = TextAreaField('Delivery Instructions')
+    submit = SubmitField('Send my Order')
 
-# Define LoginForm for user authentication
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=1, max=50)])
-    password = StringField('Password', validators=[DataRequired(), Length(min=1, max=100)])
-    submit = SubmitField('Login')
 
-# User loader for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-# Home route
+# 路由
 @app.route('/')
 def home():
-    return render_template('home.html')  # Render home page template
+    return render_template('home.html')
 
-# Order route for creating new orders
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/test')
+def test():
+    return render_template('test.html')
+
+
+@app.route('/all_pizzas')
+def all_pizzas():
+    pizzas = Pizza.query.order_by(Pizza.name.asc()).all()
+    return render_template('all_pizzas.html', pizzas=pizzas)
+
+
+@app.route('/pizza/<int:id>')
+def pizza(id):
+    pizza = Pizza.query.get_or_404(id)
+    return render_template('pizza.html', pizza=pizza)
+
+
 @app.route('/order', methods=['GET', 'POST'])
-@login_required
 def order():
     form = OrderForm()
     if form.validate_on_submit():
-        try:
-            # Create new order instance
-            new_order = Order(
-                name=form.name.data,
-                topping=form.topping.data,
-                sauce=form.sauce.data,
-                extras=form.extras.data,
-                instructions=form.instructions.data
-            )
+        name = form.name.data
+        topping = form.topping.data
+        sauce = form.sauce.data
+        extras = ', '.join(form.extras.data) if form.extras.data else None
+        instructions = form.instructions.data
+
+        print(f"Inserting order: {name}, {topping}, {sauce}, {extras}, {instructions}")  # 调试日志
+        existing_order = Order.query.filter_by(name=name).first()
+        if existing_order:
+            existing_order.topping = topping
+            existing_order.sauce = sauce
+            existing_order.extras = extras
+            existing_order.instructions = instructions
+            existing_order.update_time = datetime.utcnow()
+        else:
+            new_order = Order(name=name, topping=topping, sauce=sauce, extras=extras, instructions=instructions)
             db.session.add(new_order)
-            db.session.commit()
-            flash('Order placed successfully!', 'success')
-            logging.info(f'Order placed by {form.name.data}')
-            return redirect(url_for('order_list'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error placing order: {str(e)}', 'error')
-            logging.error(f'Order placement failed: {str(e)}')
-    return render_template('order.html', form=form)
+        db.session.commit()
 
-# Order list route for viewing all orders
-@app.route('/order_list')
-@login_required
-def order_list():
-    try:
-        orders = Order.query.all()  # Retrieve all orders
-        return render_template('order_list.html', orders=orders)
-    except Exception as e:
-        flash(f'Error retrieving orders: {str(e)}', 'error')
-        logging.error(f'Order list retrieval failed: {str(e)}')
-        return render_template('order_list.html', orders=[])
+        return render_template('confirmation.html', name=name, topping=topping, sauce=sauce, extras=extras,
+                               instructions=instructions)
+    return render_template('order_form.html', form=form)
 
-# Login route for user authentication
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
+
+@app.route('/orderList')
+def orderList():
+    search_query = request.args.get('search', '')
+    if search_query:
+        orders = Order.query.filter(Order.name.ilike(f'%{search_query}%')).order_by(Order.id.asc()).all()
+    else:
+        orders = Order.query.order_by(Order.id.asc()).all()
+    return render_template('orders_list.html', orders=orders, search_query=search_query)
+
+
+@app.route('/edit_order/<int:id>', methods=['GET', 'POST'])
+def edit_order(id):
+    order = Order.query.get_or_404(id)
+    form = OrderForm(obj=order)
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and user.password == form.password.data:  # Use proper hashing in production
-            login_user(user)
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('home'))
-        flash('Invalid username or password', 'error')
-    return render_template('login.html', form=form)
+        form.populate_obj(order)
+        order.update_time = datetime.utcnow()
+        db.session.commit()
+        return redirect(url_for('orderList'))
+    return render_template('edit_order.html', form=form, order=order)
 
-# Logout route
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('Logged out successfully!', 'success')
-    return redirect(url_for('home'))
 
-# Custom 404 error handler
+@app.route('/delete_order/<int:id>', methods=['POST'])
+def delete_order(id):
+    order = Order.query.get_or_404(id)
+    db.session.delete(order)
+    db.session.commit()
+    return redirect(url_for('orderList'))
+
+
 @app.errorhandler(404)
-def page_not_found(e):
+def not_found(e):
     return render_template('404.html'), 404
 
-# Initialize database and run application
+
+# 初始化数据库
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Create database tables
+        db.create_all()
     app.run(debug=True)

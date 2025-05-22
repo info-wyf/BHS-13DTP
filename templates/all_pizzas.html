@@ -1,12 +1,18 @@
 {% extends 'layout.html' %}
 {% block content %}
 
-    <h2 style="color:green;">ALL PIZZAS</h2>
+<head>
+    <meta charset="UTF-8">
+    <title>All Pizzas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1 style="color: green;">ALL PIZZAS</h1>
     <ul>
-        {# Jinja loop, almost like Python #}
         {% for pizza in pizzas %}
-            <li><a href="/pizza/{{ pizza[0] }}">{{ pizza[1] }}</a></li>
+        <li><a href="{{ url_for('pizza', id=pizza.id) }}">{{ pizza.name }}</a></li>
         {% endfor %}
     </ul>
+</body>
 
 {% endblock %}
