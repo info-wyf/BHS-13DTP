@@ -7,6 +7,9 @@
 
 • Learning resources: https://www.w3schools.com/html/html_forms.asp
 
+# Tips:
+use "pip install -r requirements.txt" to install Flask Flask-SQLAlchemy and Flask-WTF.
+
 # Trouble shooting
 
 1.Problem:
