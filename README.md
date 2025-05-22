@@ -1,7 +1,7 @@
-### BHS12DTP
+### BHS13DTP
 
 # Resources
-• code: https://github.com/info-wyf/BHS-12DTP
+• code: https://github.com/info-wyf/BHS-13DTP
 
 • Examples: https://opentechschool.github.io/python-flask/core/forms.html
 
@@ -17,3 +17,11 @@ fatal: Authentication failed for 'https://github.com/info-wyf/BHS-12DTP.git/'
 1.Solutions:
 use GitHub CLI or git-credential-manager:
 https://docs.github.com/en/get-started/git-basics/caching-your-github-credentials-in-git
+
+2.Problem:
+sqlalchemy.exc.ProgrammingError: (sqlite3.ProgrammingError) Error binding parameter 2: type 'list' is not supported
+[SQL: UPDATE orders SET name=?, extras=?, update_time=? WHERE orders.id = ?]
+
+2.Solutions:
+order.extras = ', '.join(form.extras.data)  # Convert list to string to solve the problems above
+
