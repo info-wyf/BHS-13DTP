@@ -10,6 +10,17 @@
 # Tips:
 use "pip install -r requirements.txt" to install Flask Flask-SQLAlchemy and Flask-WTF.
 
+
+# Personal Website by Github
+• Official guidelines:
+https://pages.github.com/
+https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+
+
+• Chinese Version:
+https://lemonchann.github.io/blog/create_blog_with_github_pages/#
+
+
 # Trouble shooting
 
 1.Problem:
